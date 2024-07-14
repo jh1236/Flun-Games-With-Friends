@@ -1,3 +1,5 @@
+use std::borrow::ToOwned;
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -7,14 +9,29 @@ pub struct TemplateApp {
 
     #[serde(skip)] // This how you opt-out of serialization of a field
     value: f32,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    team_one_name: String,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    team_two_name: String,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    xs_turn: bool,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    board: [usize; 9],
 }
+
+
+
 
 impl Default for TemplateApp {
     fn default() -> Self {
         Self {
             // Example stuff:
             label: "Hello World!".to_owned(),
+            team_one_name: "Team One".to_owned(),
+            team_two_name: "Team Two".to_owned(),
             value: 2.7,
+            xs_turn: true,
+            board: [0, 0, 0, 0, 0, 0, 0, 0, 0],
         }
     }
 }
@@ -43,6 +60,7 @@ impl eframe::App for TemplateApp {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        let index_to_symbol = ["-".to_owned(), "X".to_owned(), "O".to_owned()];
         // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
 
@@ -67,7 +85,7 @@ impl eframe::App for TemplateApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-            ui.heading("eframe template");
+            ui.heading("Time for Tick Tack Toe");
 
             ui.horizontal(|ui| {
                 ui.label("Write something: ");
@@ -75,6 +93,17 @@ impl eframe::App for TemplateApp {
             });
 
             ui.add(egui::Slider::new(&mut self.value, 0.0..=10.0).text("value"));
+            for r in 0..3 {
+                ui.horizontal(|x| {
+                    for c in 0..3 {
+                        if x.button(index_to_symbol[self.board[r * 3 + c]].to_owned()).clicked() {
+                            self.board[r * 3 + c] = 1 + if self.xs_turn { 1 } else { 0 };
+                            self.xs_turn = !self.xs_turn;
+                        }
+                    }
+                });
+                ui.separator();
+            }
             if ui.button("Increment").clicked() {
                 self.value += 1.0;
             }
